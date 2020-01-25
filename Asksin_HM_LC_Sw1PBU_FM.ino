@@ -61,7 +61,7 @@ boolean lastCurrentSense = false;
 boolean lastCurrentPin = false;
 const uint8_t pinCurrent = 31;
 const uint8_t pinRelay = 12;
-const unsigned long minImpulsLength = 5000;
+const unsigned long minImpulsLength = 2000;
 const uint8_t sendSensorIntervalSec = 150;
 
 ISR(PCINT0_vect) {
@@ -148,8 +148,10 @@ void loop() {
                 if (currentSense != lastCurrentSense)
                 {
                   rl[1].setCurStat(currentSense?3:6);
-//                  Serial << F("New Powersense: ") << currentSense << '\n';
-//                  hm.sendInfoActuatorStatus(4,currentSense?0xC8:0x00,0);
+		#if defined(USE_SERIAL)
+                  Serial << F("New Powersense: ") << currentSense << '\n';
+		#endif
+                  hm.sendInfoActuatorStatus(4,currentSense?0xC8:0x00,0);
                   lastCurrentSense = currentSense;
                 }
                 sei();
@@ -244,7 +246,7 @@ void HM_Status_Request(uint8_t cnl, uint8_t *data, uint8_t len) {
 	#if defined(RL_DBG)	
 	Serial << F("\nxtStattus_Request; cnl: ") << pHex(cnl) << F(", data: ") << pHex(data,len) << "\n\n";
         #endif
-	//if (cnl == 3) rl[0].sendStatus();											// send the current status
+	if (cnl == 3) rl[0].sendStatus();											// send the current status
 }
 void HM_Set_Cmd(uint8_t cnl, uint8_t *data, uint8_t len) {
 	// message from master to client for setting a defined value to client channel
@@ -299,7 +301,7 @@ void HM_Config_Changed(uint8_t cnl, uint8_t *data, uint8_t len) {
 #if defined(USE_SERIAL)
 //- config functions ------------------------------------------------------------------------------------------------------
 void sendCmdStr() {																// reads a sndStr from console and put it in the send queue
- 	memcpy(hm.send.data,parser.buffer,parser.count());							// take over the parsed byte data
+ 	memcpy(hm.send.data,parser.buffer,parser.count());				// take over the parsed byte data
 	Serial << F("s: ") << pHexL(hm.send.data, hm.send.data[0]+1) << '\n';		// some debug string
 	hm.send_out();																// fire to send routine
 }
